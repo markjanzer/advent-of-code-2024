@@ -17,8 +17,6 @@ const SmallTestString string = `3   4
 
 const TestString string = ``
 
-const DataFile string = "data.txt"
-
 /*
 	Part 1 Notes
 
@@ -108,11 +106,11 @@ func main() {
 	lib.AssertEqual(11, solvePart1(SmallTestString))
 	lib.AssertEqual(31, solvePart2(SmallTestString))
 
-	dataString1 := lib.GetDataString(DataFile)
-	result1 := solvePart1(dataString1)
+	dataString := lib.GetDataString()
+
+	result1 := solvePart1(dataString)
 	fmt.Println(result1)
 
-	dataString2 := lib.GetDataString(DataFile)
-	result2 := solvePart2(dataString2)
+	result2 := solvePart2(dataString)
 	fmt.Println(result2)
 }

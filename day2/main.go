@@ -1,19 +1,19 @@
-#!/bin/bash
-
-# Check if a directory name is provided
-if [ "$#" -ne 1 ]; then
-    echo "Usage: $0 <directory-name>"
-    exit 1
-fi
-
-DIR_NAME=$1
-MAIN_GO_CONTENT='package main
+package main
 
 import (
 	"advent-of-code-2024/lib"
 )
 
-const SmallTestString string = ``
+const SmallTestString string = `7 6 4 2 1
+1 2 7 8 9
+9 7 6 2 1
+1 3 2 4 5
+8 6 4 4 1
+1 3 6 7 9`
+
+const TestString string = ``
+
+const DataFile string = "data.txt"
 
 /*
 	Part 1 Notes
@@ -48,12 +48,3 @@ func main() {
 	// result2 := solvePart2(dataString)
 	// fmt.Println(result2)
 }
-'
-# Create the directory
-mkdir -p "$DIR_NAME"
-
-# Create an empty data.txt file
-touch "$DIR_NAME/data.txt"
-
-# Create main.go with the provided template
-echo "$MAIN_GO_CONTENT" > "$DIR_NAME/main.go"

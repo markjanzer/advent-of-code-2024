@@ -5,7 +5,13 @@ import (
 	"os"
 )
 
-func GetDataString(fileName string) string {
+const DataFileName string = "data.txt"
+
+func GetDataString() string {
+	return readDataFile(DataFileName)
+}
+
+func readDataFile(fileName string) string {
 	file, err := os.Open(fileName)
 	if err != nil {
 		panic(err)
