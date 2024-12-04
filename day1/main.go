@@ -2,14 +2,11 @@ package main
 
 import (
 	"advent-of-code-2024/lib"
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
 )
-
-// import (
-// 	"advent-of-code-2024/lib"
-// )
 
 const SmallTestString string = `3   4
 4   3
@@ -54,8 +51,12 @@ func solvePart1(input string) int {
 
 	result := 0
 
-	for i, _ := range list1 {
-		result += list2[i] - list1[i]
+	for i := range list1 {
+		difference := list2[i] - list1[i]
+		if difference < 0 {
+			difference = -difference
+		}
+		result += difference
 	}
 
 	return result
@@ -64,24 +65,54 @@ func solvePart1(input string) int {
 /*
 	Part 2 Notes
 
+	Make a frequency map of the numbers in the right list
+	Create a sum of 0
+	Iterate through the left list, multiplying the number by the frequency of the number in
+	the right list, and add it to the sum
 */
 
-// func solvePart2(input string) int {
-// 	return 0
-// }
+func solvePart2(input string) int {
+	lines := strings.Split(input, "\n")
+
+	list1 := []int{}
+	list2 := []int{}
+
+	for _, line := range lines {
+		fields := strings.Fields(line)
+		num1, _ := strconv.Atoi(fields[0])
+		num2, _ := strconv.Atoi(fields[1])
+
+		list1 = append(list1, num1)
+		list2 = append(list2, num2)
+	}
+
+	frequencyMap := make(map[int]int)
+
+	for _, num := range list2 {
+		if _, ok := frequencyMap[num]; !ok {
+			frequencyMap[num] = 0
+		}
+		frequencyMap[num]++
+	}
+
+	sum := 0
+
+	for _, num := range list1 {
+		sum += num * frequencyMap[num]
+	}
+
+	return sum
+}
 
 func main() {
 	lib.AssertEqual(11, solvePart1(SmallTestString))
-	// lib.AssertEqual(1, solvePart2(TestString))
+	lib.AssertEqual(31, solvePart2(SmallTestString))
 
-	// lib.AssertEqual(1, solvePart1(SmallTestString))
-	// lib.AssertEqual(1, solvePart2(SmallTestString))
+	dataString1 := lib.GetDataString(DataFile)
+	result1 := solvePart1(dataString1)
+	fmt.Println(result1)
 
-	// dataString := lib.GetDataString(DataFile)
-	// result1 := solvePart1(dataString)
-	// fmt.Println(result1)
-
-	// dataString := lib.GetDataString(DataFile)
-	// result2 := solvePart2(dataString)
-	// fmt.Println(result2)
+	dataString2 := lib.GetDataString(DataFile)
+	result2 := solvePart2(dataString2)
+	fmt.Println(result2)
 }
