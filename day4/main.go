@@ -2,7 +2,6 @@ package main
 
 import (
 	"advent-of-code-2024/lib"
-	"fmt"
 )
 
 const TestString string = `MMMSXXMASM
@@ -134,20 +133,72 @@ func (p Point) Char() string {
 /*
 	Part 2 Notes
 
+	Now we're looking for MAS strings in the shape of Xs.
+
+	So I think we look for any A character, then we get pairs of neighbors:
+	top left + bottom right
+	top right + bottom left
+
+	If both those pairs of characters are the collection of [M,S] then we add to the total.
 */
 
 func solvePart2(input string) int {
-	return 0
+	grid := lib.Grid{}
+	grid.Create(input)
+	grid.Print()
+
+	total := 0
+
+	for y := range grid {
+		for x := range grid[y] {
+			point := Point{X: x, Y: y, Grid: grid}
+			if XShapedMASFromPoint(point) {
+				total++
+			}
+		}
+	}
+
+	return total
+}
+
+func XShapedMASFromPoint(point Point) bool {
+	if point.Char() != "A" {
+		return false
+	}
+
+	topLeft := point.MoveDirection(-1, -1)
+	bottomRight := point.MoveDirection(1, 1)
+
+	topRight := point.MoveDirection(1, -1)
+	bottomLeft := point.MoveDirection(-1, 1)
+
+	allCrossPoints := []Point{topLeft, topRight, bottomLeft, bottomRight}
+
+	for _, crossPoint := range allCrossPoints {
+		if !crossPoint.IsInGrid() {
+			return false
+		}
+	}
+
+	cross1 := []Point{topLeft, bottomRight}
+	cross2 := []Point{topRight, bottomLeft}
+
+	return validCross(cross1) && validCross(cross2)
+}
+
+func validCross(cross []Point) bool {
+	return cross[0].Char() == "M" && cross[1].Char() == "S" ||
+		cross[0].Char() == "S" && cross[1].Char() == "M"
 }
 
 func main() {
 	lib.AssertEqual(18, solvePart1(TestString))
-	// lib.AssertEqual(1, solvePart2(TestString))
+	lib.AssertEqual(9, solvePart2(TestString))
 
-	dataString := lib.GetDataString()
+	// dataString := lib.GetDataString()
 
-	result1 := solvePart1(dataString)
-	fmt.Println(result1)
+	// result1 := solvePart1(dataString)
+	// fmt.Println(result1)
 
 	// result2 := solvePart2(dataString)
 	// fmt.Println(result2)
