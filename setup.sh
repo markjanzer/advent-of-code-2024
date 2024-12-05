@@ -13,7 +13,7 @@ import (
 	"advent-of-code-2024/lib"
 )
 
-const SmallTestString string = ``
+const TestString string = ``
 
 /*
 	Part 1 Notes
@@ -34,8 +34,8 @@ func solvePart2(input string) int {
 }
 
 func main() {
-	lib.AssertEqual(1, solvePart1(SmallTestString))
-	// lib.AssertEqual(1, solvePart2(SmallTestString))
+	lib.AssertEqual(1, solvePart1(TestString))
+	// lib.AssertEqual(1, solvePart2(TestString))
 
 	// dataString := lib.GetDataString()
 
