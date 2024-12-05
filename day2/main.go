@@ -19,38 +19,32 @@ const SmallTestString string = `7 6 4 2 1
 
 */
 
-func solvePart1(input string) int {
-	lines := strings.Split(input, "\n")
+type Report []int
 
-	safeReports := 0
-
-	for _, line := range lines {
-		fields := strings.Fields(line)
-		report := []int{}
-		for _, field := range fields {
-			num, _ := strconv.Atoi(field)
-			report = append(report, num)
-		}
-		if isSafeReport(report) {
-			fmt.Println(report)
-			safeReports++
-		}
+func (r Report) direction() int {
+	if r[0] == r[1] {
+		return 0
 	}
-	return safeReports
+
+	if r[0] < r[1] {
+		return 1
+	}
+	return -1
 }
 
-func isSafeReport(report []int) bool {
-	direction := levelsDirection(report)
+func (r Report) IsSafe() bool {
+	direction := r.direction()
+
 	if direction == 0 {
 		return false
 	}
 
-	for i := 0; i < len(report)-1; i++ {
+	for i := 0; i < len(r)-1; i++ {
 		difference := 0
 		if direction == 1 {
-			difference = report[i+1] - report[i]
+			difference = r[i+1] - r[i]
 		} else if direction == -1 {
-			difference = report[i] - report[i+1]
+			difference = r[i] - r[i+1]
 		} else {
 			panic("unexpected direction")
 		}
@@ -63,35 +57,85 @@ func isSafeReport(report []int) bool {
 	return true
 }
 
-func levelsDirection(report []int) int {
-	if report[0] == report[1] {
-		return 0
-	}
+func solvePart1(input string) int {
+	lines := strings.Split(input, "\n")
 
-	if report[0] < report[1] {
-		return 1
+	safeReports := 0
+
+	for _, line := range lines {
+		fields := strings.Fields(line)
+		report := Report{}
+		for _, field := range fields {
+			num, _ := strconv.Atoi(field)
+			report = append(report, num)
+		}
+		if report.IsSafe() {
+			safeReports++
+		}
 	}
-	return -1
+	return safeReports
 }
 
 /*
 	Part 2 Notes
 
+	Similar to above, but if there is an error, see if removing one of the numbers makes it safe.
 */
 
+// Returns all reports with one number removed
+func (r Report) reportVariants() []Report {
+	reports := []Report{}
+
+	for i := 0; i < len(r); i++ {
+		report := Report{}
+		report = append(report, r[:i]...)
+		report = append(report, r[i+1:]...)
+		reports = append(reports, report)
+	}
+	return reports
+}
+
+func (r Report) HasOneSafeVariant() bool {
+	variants := r.reportVariants()
+	for _, variant := range variants {
+		if variant.IsSafe() {
+			return true
+		}
+	}
+	return false
+}
+
 func solvePart2(input string) int {
-	return 0
+	lines := strings.Split(input, "\n")
+
+	safeReports := 0
+
+	for _, line := range lines {
+		fields := strings.Fields(line)
+		report := Report{}
+		for _, field := range fields {
+			num, _ := strconv.Atoi(field)
+			report = append(report, num)
+		}
+		if report.IsSafe() {
+			safeReports++
+		} else if report.HasOneSafeVariant() {
+			safeReports++
+		}
+	}
+
+	return safeReports
 }
 
 func main() {
 	lib.AssertEqual(2, solvePart1(SmallTestString))
-	// lib.AssertEqual(1, solvePart2(SmallTestString))
+	lib.AssertEqual(4, solvePart2(SmallTestString))
 
 	dataString := lib.GetDataString()
 
-	result1 := solvePart1(dataString)
-	fmt.Println(result1)
+	// result1 := solvePart1(dataString)
+	// fmt.Println(result1)
 
-	// result2 := solvePart2(dataString)
-	// fmt.Println(result2)
+	result2 := solvePart2(dataString)
+	fmt.Println(result2)
 }
