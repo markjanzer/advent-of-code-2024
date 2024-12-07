@@ -133,11 +133,9 @@ func solvePart1(input string) int {
 func solvePart2(input string) int {
 	guard, obstructions, xMax, yMax := scanGrid(input)
 	originalGuardLocation := guard
-	newObstructions := make(map[Point]bool)
 	visited := make(map[Point]map[string]bool)
+	possibleObstructions := make(map[Point]bool)
 	direction := north
-	visited[guard] = make(map[string]bool)
-	visited[guard][direction.Name] = true
 
 	for guard.IsInGrid(xMax, yMax) {
 		if visited[guard] == nil {
@@ -151,31 +149,28 @@ func solvePart2(input string) int {
 			continue
 		}
 
-		// Check if adding an obstruction would cause a loop
-		modifiedObstructions := copyMap(obstructions)
-		modifiedObstructions[nextPosition] = true
-		if pathHasLoop(guard, modifiedObstructions, xMax, yMax, direction) {
-			newObstructions[nextPosition] = true
+		if pathHasLoop(guard, direction, obstructions, xMax, yMax, nextPosition) {
+			possibleObstructions[nextPosition] = true
 		}
 
 		guard = nextPosition
 	}
 
-	result := len(newObstructions)
-	if newObstructions[originalGuardLocation] {
+	result := len(possibleObstructions)
+	if possibleObstructions[originalGuardLocation] {
 		result -= 1
 	}
 	return result
 }
 
-func pathHasLoop(guard Point, obstructions map[Point]bool, xMax, yMax int, direction Direction) bool {
+func pathHasLoop(guard Point, direction Direction, obstructions map[Point]bool, xMax, yMax int, newObstruction Point) bool {
 	visited := make(map[Point]map[string]bool)
 	visited[guard] = make(map[string]bool)
 	visited[guard][direction.Name] = true
 
 	for guard.IsInGrid(xMax, yMax) {
 		nextPosition := Point{guard.X + direction.X, guard.Y + direction.Y}
-		if obstructions[nextPosition] {
+		if obstructions[nextPosition] || nextPosition == newObstruction {
 			direction = direction.TurnRight()
 			continue
 		}
@@ -192,14 +187,6 @@ func pathHasLoop(guard Point, obstructions map[Point]bool, xMax, yMax int, direc
 	}
 
 	return false
-}
-
-func copyMap(original map[Point]bool) map[Point]bool {
-	newMap := make(map[Point]bool)
-	for key, value := range original {
-		newMap[key] = value
-	}
-	return newMap
 }
 
 func main() {
