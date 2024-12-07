@@ -135,6 +135,12 @@ func solvePart1(input string) int {
 	Instead, we could run the whole path once keeping track of traveled points (as we did in part 1),
 	and then we could iterate over those points, seeing if the path would be a loop if we added an
 	obstruction on the point. We would also ignore the starting point. Let's attempt this.
+
+	Ohhh wow the other answer didn't work because it wasn't properly simulating the scenarios, it was looking
+	for a loop from the current position, not from the guard's starting position. What it failed to recognize
+	is that if you put the new obstruction in fron the of the current path, that same obstruction could
+	block an earlier path, meaning the guard would have never gotten to that position, and any loop found
+	would be a false positive.
 */
 
 func solvePart2(input string) int {
