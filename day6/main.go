@@ -117,7 +117,12 @@ func solvePart1(input string) int {
 	space as a potential newObstruction
 
 	Oh the problem is that there are times when a loop would form but it still
-	is getting a unique point/direction.
+	is getting a unique point/direction. That unique point would eventually meet
+	a non-unique point-direction.
+
+	We don't need a recursive solution, because we aren't going more than 2 levels deep.
+	We need one navigation of the current path, then we need to turn right wherever possible
+	and generate those paths to see if they ever loop.
 */
 
 func solvePart2(input string) int {
@@ -129,35 +134,72 @@ func solvePart2(input string) int {
 	visited[guard][direction.Name] = true
 
 	for guard.IsInGrid(xMax, yMax) {
+		nextPosition := Point{guard.X + direction.X, guard.Y + direction.Y}
+		if obstructions[nextPosition] {
+			direction = direction.TurnRight()
+			continue
+		}
+
+		// Check if adding an obstruction would cause a loop
+		modifiedObstructions := copyMap(obstructions)
+		modifiedObstructions[nextPosition] = true
+		if pathHasLoop(guard, modifiedObstructions, xMax, yMax, direction) {
+			newObstructions[nextPosition] = true
+		}
+
+		guard = nextPosition
 		if visited[guard] == nil {
 			visited[guard] = make(map[string]bool)
 		}
 		visited[guard][direction.Name] = true
+	}
+
+	return len(newObstructions)
+}
+
+func pathHasLoop(guard Point, obstructions map[Point]bool, xMax, yMax int, direction Direction) bool {
+	visited := make(map[Point]map[string]bool)
+	visited[guard] = make(map[string]bool)
+	visited[guard][direction.Name] = true
+
+	for guard.IsInGrid(xMax, yMax) {
 		nextPosition := Point{guard.X + direction.X, guard.Y + direction.Y}
 		if obstructions[nextPosition] {
 			direction = direction.TurnRight()
-		} else {
-			if visited[guard] != nil && visited[guard][direction.TurnRight().Name] {
-				newObstructions[nextPosition] = true
-			}
-			guard = nextPosition
+			continue
 		}
+
+		guard = nextPosition
+		if visited[guard] == nil {
+			visited[guard] = make(map[string]bool)
+		}
+		// If visited before then we're in a loop
+		if visited[guard][direction.Name] {
+			return true
+		}
+		visited[guard][direction.Name] = true
 	}
 
-	fmt.Println(obstructions)
-	fmt.Println(newObstructions)
-	return len(newObstructions)
+	return false
+}
+
+func copyMap(original map[Point]bool) map[Point]bool {
+	newMap := make(map[Point]bool)
+	for key, value := range original {
+		newMap[key] = value
+	}
+	return newMap
 }
 
 func main() {
 	lib.AssertEqual(41, solvePart1(TestString))
 	lib.AssertEqual(6, solvePart2(TestString))
 
-	// dataString := lib.GetDataString()
+	dataString := lib.GetDataString()
 
 	// result1 := solvePart1(dataString)
 	// fmt.Println(result1)
 
-	// result2 := solvePart2(dataString)
-	// fmt.Println(result2)
+	result2 := solvePart2(dataString)
+	fmt.Println(result2)
 }
