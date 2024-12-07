@@ -128,66 +128,113 @@ func solvePart1(input string) int {
 	barrier where to guard is currently stationed!
 	Ah that wasn't the issue.
 	Theoretically could it be putting the obstructions outside of the grid?
+
+	Okay, I'm not sure what's wrong with that solution but there is a simpler approach to the problem.
+	Right now we are iterating through the whole path, and on each step simulating what the path would be
+	if there were an obstruction in front.
+	Instead, we could run the whole path once keeping track of traveled points (as we did in part 1),
+	and then we could iterate over those points, seeing if the path would be a loop if we added an
+	obstruction on the point. We would also ignore the starting point. Let's attempt this.
 */
 
 func solvePart2(input string) int {
 	guard, obstructions, xMax, yMax := scanGrid(input)
-	originalGuardLocation := guard
-	visited := make(map[Point]map[string]bool)
-	possibleObstructions := make(map[Point]bool)
 	direction := north
+
+	visited, loop := travel(guard, direction, xMax, yMax, obstructions)
+	if loop {
+		panic("Original path was loop")
+	}
+	return len(visited)
+
+	// Use visited from part one to get an array of the visited squares
+	// Remove the initial square
+
+	// Write a method that travels, and detects for loops using its own visited map
+	// Iterate over the visited point, adding to a total when loop is true.
+	// Return total
+}
+
+func travel(guard Point, direction Direction, xMax, yMax int, obstructions map[Point]bool) (visited map[Point]map[Direction]bool, loop bool) {
+	visited = make(map[Point]map[Direction]bool)
 
 	for guard.IsInGrid(xMax, yMax) {
 		if visited[guard] == nil {
-			visited[guard] = make(map[string]bool)
+			visited[guard] = make(map[Direction]bool)
 		}
-		visited[guard][direction.Name] = true
+		if visited[guard][direction] == true {
+			return visited, true
+		}
+		visited[guard][direction] = true
 
 		nextPosition := Point{guard.X + direction.X, guard.Y + direction.Y}
 		if obstructions[nextPosition] {
 			direction = direction.TurnRight()
-			continue
+		} else {
+			guard = nextPosition
 		}
-
-		if pathHasLoop(guard, direction, obstructions, xMax, yMax, nextPosition) {
-			possibleObstructions[nextPosition] = true
-		}
-
-		guard = nextPosition
 	}
-
-	result := len(possibleObstructions)
-	if possibleObstructions[originalGuardLocation] {
-		result -= 1
-	}
-	return result
+	return visited, false
 }
 
-func pathHasLoop(guard Point, direction Direction, obstructions map[Point]bool, xMax, yMax int, newObstruction Point) bool {
-	visited := make(map[Point]map[string]bool)
-	visited[guard] = make(map[string]bool)
-	visited[guard][direction.Name] = true
+// func solvePart2(input string) int {
+// 	guard, obstructions, xMax, yMax := scanGrid(input)
+// 	originalGuardLocation := guard
+// 	visited := make(map[Point]map[string]bool)
+// 	possibleObstructions := make(map[Point]bool)
+// 	direction := north
 
-	for guard.IsInGrid(xMax, yMax) {
-		nextPosition := Point{guard.X + direction.X, guard.Y + direction.Y}
-		if obstructions[nextPosition] || nextPosition == newObstruction {
-			direction = direction.TurnRight()
-			continue
-		}
+// 	for guard.IsInGrid(xMax, yMax) {
+// 		if visited[guard] == nil {
+// 			visited[guard] = make(map[string]bool)
+// 		}
+// 		visited[guard][direction.Name] = true
 
-		guard = nextPosition
-		if visited[guard] == nil {
-			visited[guard] = make(map[string]bool)
-		}
-		// If visited before then we're in a loop
-		if visited[guard][direction.Name] {
-			return true
-		}
-		visited[guard][direction.Name] = true
-	}
+// 		nextPosition := Point{guard.X + direction.X, guard.Y + direction.Y}
+// 		if obstructions[nextPosition] {
+// 			direction = direction.TurnRight()
+// 			continue
+// 		}
 
-	return false
-}
+// 		if pathHasLoop(guard, direction, obstructions, xMax, yMax, nextPosition) {
+// 			possibleObstructions[nextPosition] = true
+// 		}
+
+// 		guard = nextPosition
+// 	}
+
+// 	result := len(possibleObstructions)
+// 	if possibleObstructions[originalGuardLocation] {
+// 		result -= 1
+// 	}
+// 	return result
+// }
+
+// func pathHasLoop(guard Point, direction Direction, obstructions map[Point]bool, xMax, yMax int, newObstruction Point) bool {
+// 	visited := make(map[Point]map[string]bool)
+// 	visited[guard] = make(map[string]bool)
+// 	visited[guard][direction.Name] = true
+
+// 	for guard.IsInGrid(xMax, yMax) {
+// 		nextPosition := Point{guard.X + direction.X, guard.Y + direction.Y}
+// 		if obstructions[nextPosition] || nextPosition == newObstruction {
+// 			direction = direction.TurnRight()
+// 			continue
+// 		}
+
+// 		guard = nextPosition
+// 		if visited[guard] == nil {
+// 			visited[guard] = make(map[string]bool)
+// 		}
+// 		// If visited before then we're in a loop
+// 		if visited[guard][direction.Name] {
+// 			return true
+// 		}
+// 		visited[guard][direction.Name] = true
+// 	}
+
+// 	return false
+// }
 
 func main() {
 	lib.AssertEqual(41, solvePart1(TestString))
@@ -195,8 +242,8 @@ func main() {
 
 	dataString := lib.GetDataString()
 
-	// result1 := solvePart1(dataString)
-	// fmt.Println(result1)
+	result1 := solvePart1(dataString)
+	fmt.Println(result1)
 
 	result2 := solvePart2(dataString)
 	fmt.Println(result2)
