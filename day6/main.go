@@ -139,36 +139,49 @@ func solvePart1(input string) int {
 
 func solvePart2(input string) int {
 	guard, obstructions, xMax, yMax := scanGrid(input)
+	originalGuardPoint := guard
 	direction := north
 
-	visited, loop := travel(guard, direction, xMax, yMax, obstructions)
+	// Use visited from part one to get an array of the visited squares
+	visited, loop := travel(guard, direction, xMax, yMax, obstructions, Point{})
 	if loop {
 		panic("Original path was loop")
 	}
-	return len(visited)
 
-	// Use visited from part one to get an array of the visited squares
-	// Remove the initial square
+	visitedPoints := []Point{}
+	for point := range visited {
+		if point == originalGuardPoint {
+			continue
+		}
+		visitedPoints = append(visitedPoints, point)
+	}
 
-	// Write a method that travels, and detects for loops using its own visited map
 	// Iterate over the visited point, adding to a total when loop is true.
-	// Return total
+	total := 0
+	for _, newObstruction := range visitedPoints {
+		_, loop := travel(guard, direction, xMax, yMax, obstructions, newObstruction)
+		if loop {
+			total += 1
+		}
+	}
+
+	return total
 }
 
-func travel(guard Point, direction Direction, xMax, yMax int, obstructions map[Point]bool) (visited map[Point]map[Direction]bool, loop bool) {
+func travel(guard Point, direction Direction, xMax, yMax int, obstructions map[Point]bool, newObstruction Point) (visited map[Point]map[Direction]bool, loop bool) {
 	visited = make(map[Point]map[Direction]bool)
 
 	for guard.IsInGrid(xMax, yMax) {
 		if visited[guard] == nil {
 			visited[guard] = make(map[Direction]bool)
 		}
-		if visited[guard][direction] == true {
+		if visited[guard][direction] {
 			return visited, true
 		}
 		visited[guard][direction] = true
 
 		nextPosition := Point{guard.X + direction.X, guard.Y + direction.Y}
-		if obstructions[nextPosition] {
+		if obstructions[nextPosition] || nextPosition == newObstruction {
 			direction = direction.TurnRight()
 		} else {
 			guard = nextPosition
@@ -196,7 +209,7 @@ func travel(guard Point, direction Direction, xMax, yMax int, obstructions map[P
 // 			continue
 // 		}
 
-// 		if pathHasLoop(guard, direction, obstructions, xMax, yMax, nextPosition) {
+// 		if nextPosition.IsInGrid(xMax, yMax) && pathHasLoop(guard, direction, obstructions, xMax, yMax, nextPosition) {
 // 			possibleObstructions[nextPosition] = true
 // 		}
 
