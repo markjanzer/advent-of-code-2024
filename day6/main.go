@@ -123,10 +123,16 @@ func solvePart1(input string) int {
 	We don't need a recursive solution, because we aren't going more than 2 levels deep.
 	We need one navigation of the current path, then we need to turn right wherever possible
 	and generate those paths to see if they ever loop.
+
+	Answer is too high, meaning I've included one that can't be included. Oh I realized that I can't put the
+	barrier where to guard is currently stationed!
+	Ah that wasn't the issue.
+	Theoretically could it be putting the obstructions outside of the grid?
 */
 
 func solvePart2(input string) int {
 	guard, obstructions, xMax, yMax := scanGrid(input)
+	originalGuardLocation := guard
 	newObstructions := make(map[Point]bool)
 	visited := make(map[Point]map[string]bool)
 	direction := north
@@ -134,6 +140,11 @@ func solvePart2(input string) int {
 	visited[guard][direction.Name] = true
 
 	for guard.IsInGrid(xMax, yMax) {
+		if visited[guard] == nil {
+			visited[guard] = make(map[string]bool)
+		}
+		visited[guard][direction.Name] = true
+
 		nextPosition := Point{guard.X + direction.X, guard.Y + direction.Y}
 		if obstructions[nextPosition] {
 			direction = direction.TurnRight()
@@ -148,13 +159,13 @@ func solvePart2(input string) int {
 		}
 
 		guard = nextPosition
-		if visited[guard] == nil {
-			visited[guard] = make(map[string]bool)
-		}
-		visited[guard][direction.Name] = true
 	}
 
-	return len(newObstructions)
+	result := len(newObstructions)
+	if newObstructions[originalGuardLocation] {
+		result -= 1
+	}
+	return result
 }
 
 func pathHasLoop(guard Point, obstructions map[Point]bool, xMax, yMax int, direction Direction) bool {
