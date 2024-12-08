@@ -3,6 +3,7 @@ package main
 import (
 	"advent-of-code-2024/lib"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -103,20 +104,67 @@ func solvePart1(input string) int {
 /*
 	Part 2 Notes
 
+	Okay now there is a new operation || that combines the numbers.
+	I might need to optimize seeing as the base N value got a bit bigger here.
+	But lets try it without optimization first.
+
+	I need to write a function that takes two numbers and combines them.
+	Then I use the same code, except instead of just adding and multiplying,
+	I also combine.
 */
 
+func combineNumbers(num1, num2 int) int {
+	multipliedFirstNum := num1 * (int(math.Pow(10, float64(digitCount(num2)))))
+	return multipliedFirstNum + num2
+}
+
+func digitCount(num int) int {
+	s := fmt.Sprintf("%d", num)
+	return len(s)
+}
+
+func solveEquationWithCombination(desiredResult, currentResult int, nums []int) bool {
+	if len(nums) == 0 {
+		return desiredResult == currentResult
+	}
+
+	if desiredResult < currentResult {
+		return false
+	}
+
+	newSlice := nums[1:]
+	return solveEquationWithCombination(desiredResult, currentResult+nums[0], newSlice) ||
+		solveEquationWithCombination(desiredResult, currentResult*nums[0], newSlice) ||
+		solveEquationWithCombination(desiredResult, combineNumbers(currentResult, nums[0]), newSlice)
+}
+
+func solvableEquationWithCombination(equation Equation) bool {
+	newSlice := equation.Nums[1:]
+	currentResult := equation.Nums[0]
+	return solveEquationWithCombination(equation.Result, currentResult, newSlice)
+}
+
 func solvePart2(input string) int {
-	return 0
+	equations := readEquations(input)
+
+	total := 0
+	for _, equation := range equations {
+		if solvableEquationWithCombination(equation) {
+			total += equation.Result
+		}
+	}
+
+	return total
 }
 
 func main() {
 	lib.AssertEqual(3749, solvePart1(TestString))
-	// lib.AssertEqual(1, solvePart2(TestString))
+	lib.AssertEqual(11387, solvePart2(TestString))
 
-	dataString := lib.GetDataString()
+	// dataString := lib.GetDataString()
 
-	result1 := solvePart1(dataString)
-	fmt.Println(result1)
+	// result1 := solvePart1(dataString)
+	// fmt.Println(result1)
 
 	// result2 := solvePart2(dataString)
 	// fmt.Println(result2)
