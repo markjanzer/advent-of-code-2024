@@ -2,6 +2,7 @@ package main
 
 import (
 	"advent-of-code-2024/lib"
+	"fmt"
 )
 
 const TestString string = `............
@@ -99,21 +100,62 @@ func antinodesFrom(p1, p2 lib.Point) []lib.Point {
 	I think that this will just require a change to the antinodesFrom function.
 	Instead of returning one antinode for each direction, each will be a for loop that adds to the result
 	until it reaches a point out of the grid.
+
+	Ah also didn't read instructions well enough, antenna are also antinodes!
 */
 
 func solvePart2(input string) int {
-	return 0
+	grid := lib.Grid{}
+	grid.Create(input)
+
+	antenna := makeAntenna(grid)
+
+	antinodes := make(map[lib.Point]bool)
+	for _, antennaList := range antenna {
+		combinations := allCombinations(antennaList)
+		for _, points := range combinations {
+			// Points are also now antinodes
+			for _, point := range points {
+				antinodes[point] = true
+			}
+			a := harmonicAntinodes(points[0], points[1], grid)
+			for _, node := range a {
+				antinodes[node] = true
+			}
+		}
+	}
+
+	return len(antinodes)
+}
+
+func harmonicAntinodes(p1, p2 lib.Point, grid lib.Grid) []lib.Point {
+	xDirection, yDirection := p1.Direction(p2)
+	results := []lib.Point{}
+
+	nextPoint := lib.Point{X: p2.X + xDirection, Y: p2.Y + yDirection}
+	for nextPoint.IsInGrid(grid) {
+		results = append(results, nextPoint)
+		nextPoint = lib.Point{X: nextPoint.X + xDirection, Y: nextPoint.Y + yDirection}
+	}
+
+	nextPoint = lib.Point{X: p1.X - xDirection, Y: p1.Y - yDirection}
+	for nextPoint.IsInGrid(grid) {
+		results = append(results, nextPoint)
+		nextPoint = lib.Point{X: nextPoint.X - xDirection, Y: nextPoint.Y - yDirection}
+	}
+
+	return results
 }
 
 func main() {
 	lib.AssertEqual(14, solvePart1(TestString))
-	// lib.AssertEqual(34, solvePart2(TestString))
+	lib.AssertEqual(34, solvePart2(TestString))
 
-	// dataString := lib.GetDataString()
+	dataString := lib.GetDataString()
 
 	// result1 := solvePart1(dataString)
 	// fmt.Println(result1)
 
-	// result2 := solvePart2(dataString)
-	// fmt.Println(result2)
+	result2 := solvePart2(dataString)
+	fmt.Println(result2)
 }
