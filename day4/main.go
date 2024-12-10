@@ -36,40 +36,39 @@ MXMXAXMASX`
 func solvePart1(input string) int {
 	grid := lib.Grid{}
 	grid.Create(input)
-	grid.Print()
 
 	total := 0
 
 	for y := range grid {
 		for x := range grid[y] {
-			point := Point{X: x, Y: y, Grid: grid}
-			total += XMASStringsFromPoint(point)
+			point := lib.Point{X: x, Y: y}
+			total += XMASStringsFromPoint(point, grid)
 		}
 	}
 
 	return total
 }
 
-func XMASStringsFromPoint(point Point) int {
+func XMASStringsFromPoint(point lib.Point, grid lib.Grid) int {
 	total := 0
 	searchString := "XMAS"
 
-	if point.Char() == "X" {
-		neighbors := point.ValidNeighbors()
+	if point.Char(grid) == "X" {
+		neighbors := ValidNeighbors(point, grid)
 		for _, neighbor := range neighbors {
 			searchStringIndex := 1
 			nextLetter := string(searchString[searchStringIndex])
-			if neighbor.Char() == nextLetter {
+			if neighbor.Char(grid) == nextLetter {
 				nextPoint := neighbor
 				directionX, directionY := point.Direction(nextPoint)
 				searchStringIndex++
 				for searchStringIndex < len(searchString) {
 					nextLetter = string(searchString[searchStringIndex])
 					nextPoint = nextPoint.MoveDirection(directionX, directionY)
-					if !nextPoint.IsInGrid() {
+					if !nextPoint.IsInGrid(grid) {
 						break
 					}
-					if nextPoint.Char() != nextLetter {
+					if nextPoint.Char(grid) != nextLetter {
 						break
 					}
 					searchStringIndex++
@@ -84,50 +83,28 @@ func XMASStringsFromPoint(point Point) int {
 	return total
 }
 
-type Point struct {
-	X    int
-	Y    int
-	Grid lib.Grid
-}
-
-func (p Point) NeighborPoints() []Point {
-	return []Point{
-		{p.X - 1, p.Y - 1, p.Grid},
-		{p.X - 1, p.Y, p.Grid},
-		{p.X - 1, p.Y + 1, p.Grid},
-		{p.X, p.Y + 1, p.Grid},
-		{p.X + 1, p.Y - 1, p.Grid},
-		{p.X + 1, p.Y, p.Grid},
-		{p.X + 1, p.Y + 1, p.Grid},
-		{p.X, p.Y - 1, p.Grid},
+func NeighborPoints(p lib.Point) []lib.Point {
+	return []lib.Point{
+		{X: p.X - 1, Y: p.Y - 1},
+		{X: p.X - 1, Y: p.Y},
+		{X: p.X - 1, Y: p.Y + 1},
+		{X: p.X, Y: p.Y + 1},
+		{X: p.X + 1, Y: p.Y - 1},
+		{X: p.X + 1, Y: p.Y},
+		{X: p.X + 1, Y: p.Y + 1},
+		{X: p.X, Y: p.Y - 1},
 	}
 }
 
-func (p Point) ValidNeighbors() []Point {
-	neighbors := p.NeighborPoints()
-	var validNeighbors []Point
+func ValidNeighbors(p lib.Point, grid lib.Grid) []lib.Point {
+	neighbors := NeighborPoints(p)
+	var validNeighbors []lib.Point
 	for _, neighbor := range neighbors {
-		if neighbor.IsInGrid() {
+		if neighbor.IsInGrid(grid) {
 			validNeighbors = append(validNeighbors, neighbor)
 		}
 	}
 	return validNeighbors
-}
-
-func (p Point) Direction(newPoint Point) (x, y int) {
-	return newPoint.X - p.X, newPoint.Y - p.Y
-}
-
-func (p Point) MoveDirection(x, y int) Point {
-	return Point{p.X + x, p.Y + y, p.Grid}
-}
-
-func (p Point) IsInGrid() bool {
-	return p.X >= 0 && p.X < len(p.Grid[0]) && p.Y >= 0 && p.Y < len(p.Grid)
-}
-
-func (p Point) Char() string {
-	return string(p.Grid[p.Y][p.X])
 }
 
 /*
@@ -145,14 +122,13 @@ func (p Point) Char() string {
 func solvePart2(input string) int {
 	grid := lib.Grid{}
 	grid.Create(input)
-	grid.Print()
 
 	total := 0
 
 	for y := range grid {
 		for x := range grid[y] {
-			point := Point{X: x, Y: y, Grid: grid}
-			if XShapedMASFromPoint(point) {
+			point := lib.Point{X: x, Y: y}
+			if XShapedMASFromPoint(point, grid) {
 				total++
 			}
 		}
@@ -161,8 +137,8 @@ func solvePart2(input string) int {
 	return total
 }
 
-func XShapedMASFromPoint(point Point) bool {
-	if point.Char() != "A" {
+func XShapedMASFromPoint(point lib.Point, grid lib.Grid) bool {
+	if point.Char(grid) != "A" {
 		return false
 	}
 
@@ -172,23 +148,23 @@ func XShapedMASFromPoint(point Point) bool {
 	topRight := point.MoveDirection(1, -1)
 	bottomLeft := point.MoveDirection(-1, 1)
 
-	allCrossPoints := []Point{topLeft, topRight, bottomLeft, bottomRight}
+	allCrossPoints := []lib.Point{topLeft, topRight, bottomLeft, bottomRight}
 
 	for _, crossPoint := range allCrossPoints {
-		if !crossPoint.IsInGrid() {
+		if !crossPoint.IsInGrid(grid) {
 			return false
 		}
 	}
 
-	cross1 := []Point{topLeft, bottomRight}
-	cross2 := []Point{topRight, bottomLeft}
+	cross1 := []lib.Point{topLeft, bottomRight}
+	cross2 := []lib.Point{topRight, bottomLeft}
 
-	return validCross(cross1) && validCross(cross2)
+	return validCross(cross1, grid) && validCross(cross2, grid)
 }
 
-func validCross(cross []Point) bool {
-	return cross[0].Char() == "M" && cross[1].Char() == "S" ||
-		cross[0].Char() == "S" && cross[1].Char() == "M"
+func validCross(cross []lib.Point, grid lib.Grid) bool {
+	return cross[0].Char(grid) == "M" && cross[1].Char(grid) == "S" ||
+		cross[0].Char(grid) == "S" && cross[1].Char(grid) == "M"
 }
 
 func main() {
