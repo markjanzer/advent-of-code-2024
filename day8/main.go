@@ -2,7 +2,6 @@ package main
 
 import (
 	"advent-of-code-2024/lib"
-	"fmt"
 )
 
 const TestString string = `............
@@ -38,6 +37,25 @@ func solvePart1(input string) int {
 	grid := lib.Grid{}
 	grid.Create(input)
 
+	antenna := makeAntenna(grid)
+
+	antinodes := make(map[lib.Point]bool)
+	for _, antennaList := range antenna {
+		combinations := allCombinations(antennaList)
+		for _, points := range combinations {
+			potentialAntinodes := antinodesFrom(points[0], points[1])
+			for _, node := range potentialAntinodes {
+				if node.IsInGrid(grid) {
+					antinodes[node] = true
+				}
+			}
+		}
+	}
+
+	return len(antinodes)
+}
+
+func makeAntenna(grid lib.Grid) map[string][]lib.Point {
 	antenna := make(map[string][]lib.Point)
 	for y, row := range grid {
 		for x, b := range row {
@@ -51,23 +69,7 @@ func solvePart1(input string) int {
 			antenna[char] = append(antenna[char], lib.Point{X: x, Y: y})
 		}
 	}
-
-	antinodes := make(map[lib.Point]bool)
-	for _, antennaList := range antenna {
-		combinations := allCombinations(antennaList)
-		for _, points := range combinations {
-			a1, a2 := antinodesFrom(points[0], points[1])
-
-			if a1.IsInGrid(grid) {
-				antinodes[a1] = true
-			}
-			if a2.IsInGrid(grid) {
-				antinodes[a2] = true
-			}
-		}
-	}
-
-	return len(antinodes)
+	return antenna
 }
 
 func allCombinations[T any](list []T) [][]T {
@@ -80,16 +82,23 @@ func allCombinations[T any](list []T) [][]T {
 	return result
 }
 
-func antinodesFrom(p1, p2 lib.Point) (a1, a2 lib.Point) {
+func antinodesFrom(p1, p2 lib.Point) []lib.Point {
 	xDirection, yDirection := p1.Direction(p2)
-	a1 = lib.Point{X: p2.X + xDirection, Y: p2.Y + yDirection}
-	a2 = lib.Point{X: p1.X - xDirection, Y: p1.Y - yDirection}
-	return a1, a2
+	a1 := lib.Point{X: p2.X + xDirection, Y: p2.Y + yDirection}
+	a2 := lib.Point{X: p1.X - xDirection, Y: p1.Y - yDirection}
+	return []lib.Point{a1, a2}
 }
 
 /*
 	Part 2 Notes
 
+	Okay this is going to be very similar to part 1, but instead of finding the points
+	one frequency away from either antinode, we're going to keep finding points of that same
+	distance and direction away from each other until we go off the grid.
+
+	I think that this will just require a change to the antinodesFrom function.
+	Instead of returning one antinode for each direction, each will be a for loop that adds to the result
+	until it reaches a point out of the grid.
 */
 
 func solvePart2(input string) int {
@@ -98,12 +107,12 @@ func solvePart2(input string) int {
 
 func main() {
 	lib.AssertEqual(14, solvePart1(TestString))
-	// lib.AssertEqual(1, solvePart2(TestString))
+	// lib.AssertEqual(34, solvePart2(TestString))
 
-	dataString := lib.GetDataString()
+	// dataString := lib.GetDataString()
 
-	result1 := solvePart1(dataString)
-	fmt.Println(result1)
+	// result1 := solvePart1(dataString)
+	// fmt.Println(result1)
 
 	// result2 := solvePart2(dataString)
 	// fmt.Println(result2)
