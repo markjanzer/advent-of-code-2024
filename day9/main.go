@@ -115,12 +115,17 @@ func checksum(disk []string) int {
 	We could have structs that have an id and a length, and the disk could be a
 	slice of these structs.
 
+	I didn't read instructions carefully enough, and I overengineered the solution XD
+	I'm doing this all backwards. Right now I am iterating forwards and upon finding a
+	space searching each file from the back.
+	I need to be searching each file from the back and for each of those,
+	iterating from the front to try to find a spot.
 */
 
 func solvePart2(input string) int {
 	diskBlocks := createDiskBlocks2(input)
 	compactedDisk := collapseDisk(diskBlocks)
-	compactedDisk = compactedDisk.RemoveEmptyBlocks()
+	compactedDisk = compactedDisk.removeEmptyBlocks()
 	compactedDiskAsSlice := compactedDisk.ToSlice()
 	checksum := checksum(compactedDiskAsSlice)
 
@@ -162,27 +167,67 @@ func createDiskBlocks2(input string) Disk {
 	return disk
 }
 
+// Iterate over the current Disk
+
+// Ran into some errors with indices.
+// Instead of removing the space and potentially ending up with index errors,
+// we can keep the block and set the space to 0.
+// However we also need to combine contiguous space blocks.
 func collapseDisk(disk Disk) Disk {
-	// Iterate over the current Disk
-	// If there is an empty space (id == -1) then we start a reversed search on the disk
-	// When we find a file that is <= the space then we move that file in the disk ahead
-	// of the current space, and replace the space by the difference.
+	maxId := disk.maxId()
 
-	// Hopefully at this point we're still working on that space, and we try to reverse search
-	// again.
-	// If that doesn't work then we keep on iterating.
+	for id := maxId; id >= 0; id-- {
+		// disk.Print()
+		disk = disk.moveFileToAvailableSpace(id)
+		disk = disk.combineContiguousSpaceBlocks()
+	}
+	disk.Print()
+	disk = disk.removeEmptyBlocks()
 
-	// Then we might need a function that takes a disk object and turns it into an array
-	// So that the checksum can happen.
+	return disk
+}
 
-	// Ran into some errors with indices.
-	// Instead of removing the space and potentially ending up with index errors,
-	// we can keep the block and set the space to 0.
-	// However we also need to combine contiguous space blocks.
+func (disk Disk) maxId() int {
+	for i := len(disk) - 1; i >= 0; i-- {
+		if disk[i].Empty() {
+			continue
+		}
+		return disk[i].ID
+	}
+	panic(fmt.Sprintf("Disk has no files with an ID: %v", disk))
+}
 
+func (disk Disk) fileIndex(id int) int {
+	for i, file := range disk {
+		if file.ID == id {
+			return i
+		}
+	}
+	panic(fmt.Sprintf("Disk does not have file with id: %d", id))
+}
+
+func (disk Disk) moveFileToAvailableSpace(id int) Disk {
+	idIndex := disk.fileIndex(id)
+	fileToMove := disk[idIndex]
+	availableSpace := fileToMove.Size
+
+	for i := 0; i < idIndex; i++ {
+		if disk[i].Empty() && disk[i].Size >= availableSpace {
+			disk[i].Size = availableSpace - fileToMove.Size
+			// fmt.Printf("Moving from %d to %d (len: %d)\n", idIndex, i, len(disk))
+			disk.Print()
+			disk = moveElement(disk, idIndex, i)
+			disk.Print()
+			break
+		}
+	}
+	return disk
+}
+
+func oldCollapseDisk(disk Disk) Disk {
 	i := 0
 	for i < len(disk) {
-		disk = disk.CombineContiguousSpaceBlocks()
+		disk = disk.combineContiguousSpaceBlocks()
 		disk.Print()
 
 		empty := disk[i].Empty()
@@ -219,7 +264,7 @@ func collapseDisk(disk Disk) Disk {
 	return disk
 }
 
-func (d Disk) CombineContiguousSpaceBlocks() Disk {
+func (d Disk) combineContiguousSpaceBlocks() Disk {
 	for i := 1; i < len(d); i++ {
 		if d[i].Empty() && d[i-1].Empty() {
 			d[i-1].Size += d[i].Size
@@ -230,7 +275,7 @@ func (d Disk) CombineContiguousSpaceBlocks() Disk {
 	return d
 }
 
-func (d Disk) RemoveEmptyBlocks() Disk {
+func (d Disk) removeEmptyBlocks() Disk {
 	for i := 0; i < len(d); i++ {
 		if d[i].Empty() {
 			d = removeElement(d, i)
