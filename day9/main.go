@@ -2,6 +2,7 @@ package main
 
 import (
 	"advent-of-code-2024/lib"
+	"fmt"
 	"strconv"
 )
 
@@ -118,8 +119,10 @@ func checksum(disk []string) int {
 
 func solvePart2(input string) int {
 	diskBlocks := createDiskBlocks2(input)
-	compactedDisk := collapseBlocks2(diskBlocks)
-	checksum := checksum(compactedDisk)
+	compactedDisk := collapseDisk(diskBlocks)
+	compactedDisk = compactedDisk.RemoveEmptyBlocks()
+	compactedDiskAsSlice := compactedDisk.ToSlice()
+	checksum := checksum(compactedDiskAsSlice)
 
 	return checksum
 }
@@ -131,6 +134,15 @@ type File struct {
 
 type Disk []File
 
+func (f File) Empty() bool {
+	return f.ID == -1
+}
+
+func (d Disk) Print() {
+	slice := d.ToSlice()
+	fmt.Println(slice)
+}
+
 // 12345 -> 0..111....22222
 func createDiskBlocks2(input string) Disk {
 	disk := Disk{}
@@ -141,6 +153,7 @@ func createDiskBlocks2(input string) Disk {
 		fileId := -1
 		if i%2 == 0 {
 			fileId = id
+			id++
 		}
 		file := File{ID: fileId, Size: size}
 		disk = append(disk, file)
@@ -149,8 +162,7 @@ func createDiskBlocks2(input string) Disk {
 	return disk
 }
 
-func collapseDisk(disk Disk) bool {
-	// I think we're going to do this.
+func collapseDisk(disk Disk) Disk {
 	// Iterate over the current Disk
 	// If there is an empty space (id == -1) then we start a reversed search on the disk
 	// When we find a file that is <= the space then we move that file in the disk ahead
@@ -162,6 +174,108 @@ func collapseDisk(disk Disk) bool {
 
 	// Then we might need a function that takes a disk object and turns it into an array
 	// So that the checksum can happen.
+
+	// Ran into some errors with indices.
+	// Instead of removing the space and potentially ending up with index errors,
+	// we can keep the block and set the space to 0.
+	// However we also need to combine contiguous space blocks.
+
+	i := 0
+	for i < len(disk) {
+		disk = disk.CombineContiguousSpaceBlocks()
+		disk.Print()
+
+		empty := disk[i].Empty()
+		if !empty {
+			i++
+			continue
+		}
+		availableSpace := disk[i].Size
+
+		j := len(disk) - 1
+		// Should j > i or j > 0?
+		for j > i {
+			if disk[j].Empty() {
+				j--
+				continue
+			}
+			if disk[j].Size > availableSpace {
+				j--
+				continue
+			}
+
+			// If we're removing the space or inserting an element,
+			// lets try to stay in the same index to ensure that we don't
+			// miss one of the blocks
+
+			disk[i].Size = availableSpace - disk[j].Size
+			fmt.Printf("Moving from %d to %d (len: %d)\n", j, i, len(disk))
+			disk = moveElement(disk, j, i)
+			j = -1
+		}
+
+		i++
+	}
+	return disk
+}
+
+func (d Disk) CombineContiguousSpaceBlocks() Disk {
+	for i := 1; i < len(d); i++ {
+		if d[i].Empty() && d[i-1].Empty() {
+			d[i-1].Size += d[i].Size
+			d = removeElement(d, i)
+			i--
+		}
+	}
+	return d
+}
+
+func (d Disk) RemoveEmptyBlocks() Disk {
+	for i := 0; i < len(d); i++ {
+		if d[i].Empty() {
+			d = removeElement(d, i)
+			i--
+		}
+	}
+	return d
+}
+
+func (d Disk) ToSlice() []string {
+	var result []string
+	for _, file := range d {
+		char := "."
+		if file.ID != -1 {
+			char = strconv.Itoa(file.ID)
+		}
+		for i := 0; i < file.Size; i++ {
+			result = append(result, char)
+		}
+	}
+	return result
+}
+
+func removeElement[T any](slice []T, i int) []T {
+	return append(slice[:i], slice[i+1:]...)
+}
+
+func addElement[T any](slice []T, i int, element T) []T {
+	// Make room for the new element by appending a zero value
+	slice = append(slice, *new(T))
+	// Shift elements to the right
+	copy(slice[i+1:], slice[i:])
+	// Insert the new element
+	slice[i] = element
+	return slice
+}
+
+func moveElement[T any](slice []T, from int, to int) []T {
+	if from < 0 || from >= len(slice) || to < 0 || to >= len(slice) {
+		panic(fmt.Sprintf("Invalid indices: from=%d, to=%d, len=%d", from, to, len(slice)))
+	}
+
+	element := slice[from]
+	sliceWithoutElement := removeElement(slice, from)
+	return addElement(sliceWithoutElement, to, element)
 }
 
 func main() {
