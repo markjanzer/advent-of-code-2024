@@ -93,6 +93,9 @@ func collapseBlocks(diskBlocks []string) []string {
 func checksum(disk []string) int {
 	total := 0
 	for i, char := range disk {
+		if char == "." {
+			continue
+		}
 		num, _ := strconv.Atoi(char)
 		total += num * i
 	}
@@ -102,15 +105,68 @@ func checksum(disk []string) int {
 /*
 	Part 2 Notes
 
+	We need to write a different function to collapse bocks. Instead of moving individual files
+	We need to move blocks of files.
+
+	One thing we need to do is have the checksum be able to take "." and read it as 0
+
+	Another this is we probably want to store the data a little differently.
+	We could have structs that have an id and a length, and the disk could be a
+	slice of these structs.
+
 */
 
 func solvePart2(input string) int {
-	return 0
+	diskBlocks := createDiskBlocks2(input)
+	compactedDisk := collapseBlocks2(diskBlocks)
+	checksum := checksum(compactedDisk)
+
+	return checksum
+}
+
+type File struct {
+	ID   int
+	Size int
+}
+
+type Disk []File
+
+// 12345 -> 0..111....22222
+func createDiskBlocks2(input string) Disk {
+	disk := Disk{}
+
+	id := 0
+	for i, char := range input {
+		size := int(char - '0')
+		fileId := -1
+		if i%2 == 0 {
+			fileId = id
+		}
+		file := File{ID: fileId, Size: size}
+		disk = append(disk, file)
+	}
+
+	return disk
+}
+
+func collapseDisk(disk Disk) bool {
+	// I think we're going to do this.
+	// Iterate over the current Disk
+	// If there is an empty space (id == -1) then we start a reversed search on the disk
+	// When we find a file that is <= the space then we move that file in the disk ahead
+	// of the current space, and replace the space by the difference.
+
+	// Hopefully at this point we're still working on that space, and we try to reverse search
+	// again.
+	// If that doesn't work then we keep on iterating.
+
+	// Then we might need a function that takes a disk object and turns it into an array
+	// So that the checksum can happen.
 }
 
 func main() {
 	lib.AssertEqual(1928, solvePart1(TestString))
-	// lib.AssertEqual(1, solvePart2(TestString))
+	lib.AssertEqual(2858, solvePart2(TestString))
 
 	// dataString := lib.GetDataString()
 
