@@ -120,6 +120,11 @@ func checksum(disk []string) int {
 	space searching each file from the back.
 	I need to be searching each file from the back and for each of those,
 	iterating from the front to try to find a spot.
+
+	Okay the only error happening now is that when I'm moving a file I'm not replacing
+	the space with an empty file. This is fine early on, but later it creates issues.
+
+	I think this might have been signficantly easier without the file abstraction.
 */
 
 func solvePart2(input string) int {
@@ -167,21 +172,13 @@ func createDiskBlocks2(input string) Disk {
 	return disk
 }
 
-// Iterate over the current Disk
-
-// Ran into some errors with indices.
-// Instead of removing the space and potentially ending up with index errors,
-// we can keep the block and set the space to 0.
-// However we also need to combine contiguous space blocks.
 func collapseDisk(disk Disk) Disk {
 	maxId := disk.maxId()
 
 	for id := maxId; id >= 0; id-- {
-		// disk.Print()
 		disk = disk.moveFileToAvailableSpace(id)
 		disk = disk.combineContiguousSpaceBlocks()
 	}
-	disk.Print()
 	disk = disk.removeEmptyBlocks()
 
 	return disk
@@ -209,58 +206,22 @@ func (disk Disk) fileIndex(id int) int {
 func (disk Disk) moveFileToAvailableSpace(id int) Disk {
 	idIndex := disk.fileIndex(id)
 	fileToMove := disk[idIndex]
-	availableSpace := fileToMove.Size
 
 	for i := 0; i < idIndex; i++ {
-		if disk[i].Empty() && disk[i].Size >= availableSpace {
-			disk[i].Size = availableSpace - fileToMove.Size
-			// fmt.Printf("Moving from %d to %d (len: %d)\n", idIndex, i, len(disk))
-			disk.Print()
-			disk = moveElement(disk, idIndex, i)
-			disk.Print()
+		if disk[i].Empty() && disk[i].Size >= fileToMove.Size {
+			disk[i].Size = disk[i].Size - fileToMove.Size
+			disk = copyElement(disk, idIndex, i)
+			// Ensure that the old space is empty
+			disk[idIndex+1].ID = -1
 			break
 		}
 	}
 	return disk
 }
 
-func oldCollapseDisk(disk Disk) Disk {
-	i := 0
-	for i < len(disk) {
-		disk = disk.combineContiguousSpaceBlocks()
-		disk.Print()
-
-		empty := disk[i].Empty()
-		if !empty {
-			i++
-			continue
-		}
-		availableSpace := disk[i].Size
-
-		j := len(disk) - 1
-		// Should j > i or j > 0?
-		for j > i {
-			if disk[j].Empty() {
-				j--
-				continue
-			}
-			if disk[j].Size > availableSpace {
-				j--
-				continue
-			}
-
-			// If we're removing the space or inserting an element,
-			// lets try to stay in the same index to ensure that we don't
-			// miss one of the blocks
-
-			disk[i].Size = availableSpace - disk[j].Size
-			fmt.Printf("Moving from %d to %d (len: %d)\n", j, i, len(disk))
-			disk = moveElement(disk, j, i)
-			j = -1
-		}
-
-		i++
-	}
+func copyElement(disk Disk, from int, to int) Disk {
+	element := disk[from]
+	disk = addElement(disk, to, element)
 	return disk
 }
 
@@ -277,7 +238,7 @@ func (d Disk) combineContiguousSpaceBlocks() Disk {
 
 func (d Disk) removeEmptyBlocks() Disk {
 	for i := 0; i < len(d); i++ {
-		if d[i].Empty() {
+		if d[i].Size == 0 {
 			d = removeElement(d, i)
 			i--
 		}
@@ -313,25 +274,15 @@ func addElement[T any](slice []T, i int, element T) []T {
 	return slice
 }
 
-func moveElement[T any](slice []T, from int, to int) []T {
-	if from < 0 || from >= len(slice) || to < 0 || to >= len(slice) {
-		panic(fmt.Sprintf("Invalid indices: from=%d, to=%d, len=%d", from, to, len(slice)))
-	}
-
-	element := slice[from]
-	sliceWithoutElement := removeElement(slice, from)
-	return addElement(sliceWithoutElement, to, element)
-}
-
 func main() {
 	lib.AssertEqual(1928, solvePart1(TestString))
 	lib.AssertEqual(2858, solvePart2(TestString))
 
-	// dataString := lib.GetDataString()
+	dataString := lib.GetDataString()
 
 	// result1 := solvePart1(dataString)
 	// fmt.Println(result1)
 
-	// result2 := solvePart2(dataString)
-	// fmt.Println(result2)
+	result2 := solvePart2(dataString)
+	fmt.Println(result2)
 }
